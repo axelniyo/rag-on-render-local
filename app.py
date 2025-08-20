@@ -10,7 +10,7 @@ app = Flask(__name__)
 # -------------------------
 # Download GPT4All Mini if not present
 # -------------------------
-model_path = "ggml-gpt4all-mini.bin"
+model_path = "ggml-gpt4all-j-v1.3-groovy.bin"
 if not os.path.exists(model_path):
     print("Downloading GPT4All Mini model...")
     url = "https://huggingface.co/nomic-ai/gpt4all/resolve/main/ggml/gpt4all-mini.bin"
