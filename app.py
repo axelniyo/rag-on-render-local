@@ -1,50 +1,78 @@
+import os
+import urllib.request
 from flask import Flask, request, jsonify
 import chromadb
 from sentence_transformers import SentenceTransformer
-import subprocess
-import os
+from gpt4all import GPT4All
 
 app = Flask(__name__)
 
+# -------------------------
+# Download GPT4All Mini if not present
+# -------------------------
+model_path = "ggml-gpt4all-mini.bin"
+if not os.path.exists(model_path):
+    print("Downloading GPT4All Mini model...")
+    url = "https://huggingface.co/nomic-ai/gpt4all/resolve/main/ggml/gpt4all-mini.bin"
+    urllib.request.urlretrieve(url, model_path)
+    print("Download complete!")
+
+# -------------------------
+# Load GPT4All Mini model
+# -------------------------
+model = GPT4All(model_path)
+
+# -------------------------
 # Initialize ChromaDB
+# -------------------------
 chroma_client = chromadb.Client()
 collection = chroma_client.create_collection(name="knowledge_base")
 
+# -------------------------
 # Load embedding model
+# -------------------------
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
 
-# Function to query Ollama
-def query_ollama(prompt):
-    result = subprocess.run(
-        ["ollama", "run", "llama3"],
-        input=prompt.encode("utf-8"),
-        capture_output=True
-    )
-    return result.stdout.decode("utf-8")
-
+# -------------------------
+# Routes
+# -------------------------
 @app.route("/add", methods=["POST"])
 def add_document():
     data = request.json
     text = data.get("text")
+    if not text:
+        return jsonify({"error": "No text provided"}), 400
+
     embedding = embedder.encode([text])[0].tolist()
-    collection.add(documents=[text], embeddings=[embedding], ids=[str(len(collection.get()['ids']))])
+    collection.add(
+        documents=[text],
+        embeddings=[embedding],
+        ids=[str(len(collection.get()["ids"]))]
+    )
     return jsonify({"message": "Document added!"})
 
 @app.route("/ask", methods=["POST"])
 def ask():
     data = request.json
     question = data.get("question")
+    if not question:
+        return jsonify({"error": "No question provided"}), 400
+
     q_embedding = embedder.encode([question])[0].tolist()
-    
-    # Retrieve most relevant docs
+
+    # Retrieve most relevant document
     results = collection.query(query_embeddings=[q_embedding], n_results=1)
     context = results["documents"][0][0] if results["documents"] else ""
 
-    # Ask Ollama with context
-    answer = query_ollama(f"Context: {context}\n\nQuestion: {question}")
+    # Generate answer using GPT4All Mini
+    prompt = f"Context: {context}\n\nQuestion: {question}\nAnswer:"
+    answer = model.generate(prompt)
+
     return jsonify({"answer": answer})
 
+# -------------------------
+# Run Flask app on Render
+# -------------------------
 if __name__ == "__main__":
-   port = int(os.environ.get("PORT", 5000))
-app.run(host="0.0.0.0", port=port)
-
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
