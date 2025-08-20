@@ -2,3 +2,4 @@ flask
 chromadb
 sentence-transformers
 gpt4all
+huggingface_hub
