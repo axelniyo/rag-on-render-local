@@ -8,8 +8,13 @@ from gpt4all import GPT4All
 app = Flask(__name__)
 
 # -------------------------
-# Load GPT4All J Groovy model
-model_path = "ggml-gpt4all-j-v1.3-groovy.bin"
+from huggingface_hub import hf_hub_download
+
+# -------------------------
+# Download GPT4All J Groovy model from Hugging Face
+model_path = hf_hub_download(repo_id="axelniyo/ggml-gpt4all-j-v1.3-groovy"
+, 
+                             filename="ggml-gpt4all-j-v1.3-groovy.bin")
 model = GPT4All(model_path)
 
 
