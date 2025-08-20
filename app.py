@@ -8,19 +8,10 @@ from gpt4all import GPT4All
 app = Flask(__name__)
 
 # -------------------------
-# Download GPT4All Mini if not present
-# -------------------------
+# Load GPT4All J Groovy model
 model_path = "ggml-gpt4all-j-v1.3-groovy.bin"
-if not os.path.exists(model_path):
-    print("Downloading GPT4All Mini model...")
-    url = "https://huggingface.co/nomic-ai/gpt4all/resolve/main/ggml/gpt4all-mini.bin"
-    urllib.request.urlretrieve(url, model_path)
-    print("Download complete!")
-
-# -------------------------
-# Load GPT4All Mini model
-# -------------------------
 model = GPT4All(model_path)
+
 
 # -------------------------
 # Initialize ChromaDB
